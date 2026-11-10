@@ -4,7 +4,7 @@ ViberDocs turns an HTML file into a shared, versioned doc at a link. This plugin
 
 It has two parts:
 
-- **A skill with a command-line tool.** In a Claude session with a shell, the `viberdocs` skill runs a small Node program bundled in this plugin (`skills/viberdocs/scripts/viberdocs.mjs`) to sign in, upload a doc's HTML, download a version and save template drafts, so the HTML never passes through the conversation. The skill pre-approves that one script and nothing else.
+- **A skill with a command-line tool.** In a Claude session with a shell, the `viberdocs` skill runs a small Node program bundled in this plugin (`skills/viberdocs/scripts/viberdocs.mjs`) to sign in, upload a doc's HTML, download a version and save template drafts, so the HTML never passes through the conversation. The skill pre-approves that one script and nothing else, so Claude Code asks you to allow the skill before it runs; once you allow it, Claude runs the script's commands without asking each time.
 - **The ViberDocs connector.** The plugin's `.mcp.json` points at the ViberDocs MCP server, `https://viberdocs.com/mcp`, the same connector claude.ai offers.
 
 ## Install
