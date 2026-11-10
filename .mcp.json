@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "viberdocs": {
+      "type": "http",
+      "url": "https://viberdocs.com/mcp"
+    }
+  }
+}

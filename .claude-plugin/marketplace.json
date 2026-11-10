@@ -1,0 +1,15 @@
+{
+  "name": "waterbearai",
+  "owner": {
+    "name": "Waterbear AI"
+  },
+  "metadata": {
+    "description": "Waterbear AI's plugins for Claude."
+  },
+  "plugins": [
+    {
+      "name": "viberdocs",
+      "source": "./"
+    }
+  ]
+}

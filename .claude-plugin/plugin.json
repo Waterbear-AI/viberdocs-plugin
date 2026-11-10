@@ -1,0 +1,16 @@
+{
+  "name": "viberdocs",
+  "displayName": "ViberDocs",
+  "version": "1.5.2",
+  "description": "Publish, edit and download ViberDocs docs and templates from Claude, with a bundled command-line tool for the shell and the ViberDocs connector beside it.",
+  "author": {
+    "name": "Waterbear AI"
+  },
+  "homepage": "https://viberdocs.com",
+  "license": "MIT",
+  "privacyPolicyUrl": "https://viberdocs.com/privacy.html",
+  "termsOfServiceUrl": "https://viberdocs.com/terms.html",
+  "documentationUrl": "https://github.com/Waterbear-AI/viberdocs-plugin#readme",
+  "supportUrl": "https://github.com/Waterbear-AI/viberdocs-plugin/issues",
+  "repository": "https://github.com/Waterbear-AI/viberdocs-plugin"
+}
