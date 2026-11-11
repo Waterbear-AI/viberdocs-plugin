@@ -49,6 +49,8 @@ Add `.viberdocs/` to the project's `.gitignore`. Never read, print or share anyt
 
 Every command prints one JSON line with `--json`. Use `--json` always, and read the result instead of scraping text.
 
+Claude Code fills in this skill's folder in the commands below. If a command still shows the unreplaced `CLAUDE_SKILL_DIR` placeholder (Codex and other agents leave it as is), run `scripts/viberdocs.mjs` from the folder that holds this SKILL.md instead: put that folder's path where the placeholder is.
+
 ```bash
 node ${CLAUDE_SKILL_DIR}/scripts/viberdocs.mjs --version
 node ${CLAUDE_SKILL_DIR}/scripts/viberdocs.mjs status --json

@@ -1,0 +1,20 @@
+{
+  "name": "waterbearai",
+  "interface": {
+    "displayName": "Waterbear AI"
+  },
+  "plugins": [
+    {
+      "name": "viberdocs",
+      "source": {
+        "source": "local",
+        "path": "./"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Productivity"
+    }
+  ]
+}

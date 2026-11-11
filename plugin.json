@@ -1,0 +1,53 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "viberdocs",
+  "version": "1.5.5",
+  "description": "Publish, edit and download ViberDocs docs and templates, with a bundled command-line tool for the shell and the ViberDocs connector beside it.",
+  "author": {
+    "name": "Waterbear AI",
+    "url": "https://viberdocs.com"
+  },
+  "homepage": "https://viberdocs.com",
+  "repository": "https://github.com/Waterbear-AI/viberdocs-plugin",
+  "license": "MIT",
+  "keywords": [
+    "docs",
+    "publishing",
+    "html",
+    "templates",
+    "mcp"
+  ],
+  "extensions": {
+    "com.openai": {
+      "interface": {
+        "displayName": "ViberDocs",
+        "shortDescription": "Publish and edit shared docs",
+        "longDescription": "ViberDocs turns an HTML file into a shared, versioned doc at a link. This plugin publishes, updates, previews and downloads ViberDocs docs and saves document templates. In a session with a shell and Node 22 or 24, its skill runs a small bundled command-line tool so a doc's files never pass through the conversation. The ViberDocs connector lets the assistant browse your workspaces, folders and docs, and edit, preview and publish drafts without a shell.",
+        "developerName": "Waterbear AI",
+        "category": "Productivity",
+        "capabilities": [
+          "Publish an HTML file or a folder of files as a ViberDocs doc",
+          "Pull a doc, edit it and publish the next version with a conflict check",
+          "Preview a draft at a short-lived link before it goes live",
+          "Browse and search workspaces, folders and docs",
+          "Create and update document templates and styles"
+        ],
+        "websiteURL": "https://viberdocs.com",
+        "supportURL": "https://github.com/Waterbear-AI/viberdocs-plugin/issues",
+        "privacyPolicyURL": "https://viberdocs.com/privacy.html",
+        "termsOfServiceURL": "https://viberdocs.com/terms.html",
+        "defaultPrompt": [
+          "Publish this HTML file to ViberDocs",
+          "Pull my ViberDocs doc so I can edit it",
+          "Find my ViberDocs docs about the roadmap"
+        ],
+        "brandColor": "#1D63D8",
+        "brandColorDark": "#4F8FF0",
+        "composerIcon": "./assets/composer-icon.png",
+        "composerIconDark": "./assets/composer-icon-dark.png",
+        "logo": "./assets/logo.png",
+        "logoDark": "./assets/logo-dark.png"
+      }
+    }
+  }
+}

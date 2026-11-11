@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "version": "1.5.4",
+  "version": "1.5.5",
   "api_origin": "https://viberdocs.com",
   "client_id": "viberdocs-cli",
   "protocol_version": 1

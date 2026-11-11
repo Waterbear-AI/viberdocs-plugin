@@ -5,7 +5,7 @@ ViberDocs turns an HTML file into a shared, versioned doc at a link. This plugin
 It has two parts:
 
 - **A skill with a command-line tool.** In a Claude session with a shell, the `viberdocs` skill runs a small Node program bundled in this plugin (`skills/viberdocs/scripts/viberdocs.mjs`) to sign in, upload a doc's HTML, download a version and save template drafts, so the HTML never passes through the conversation. The skill pre-approves that one script and nothing else, so Claude Code asks you to allow the skill before it runs; once you allow it, Claude runs the script's commands without asking each time.
-- **The ViberDocs connector.** The plugin's `.mcp.json` points at the ViberDocs MCP server, `https://viberdocs.com/mcp`, the same connector claude.ai offers.
+- **The ViberDocs connector.** The plugin's `.mcp.json` (and `mcp.json`, for Codex and ChatGPT) points at the ViberDocs MCP server, `https://viberdocs.com/mcp`, the same connector claude.ai offers.
 
 ## Install
 
@@ -34,7 +34,14 @@ Then run `/mcp` and sign in to ViberDocs if it needs authentication. In Claude C
 claude plugin update viberdocs@waterbearai
 ```
 
-**Claude only, for now.** The skill's commands rely on a Claude Code variable that Codex does not define. Codex users add the ViberDocs connector instead.
+**Codex.** The same repository is a Codex plugin marketplace (`.agents/plugins/marketplace.json`, with the Agent Plugins `plugin.json` and `mcp.json` at the root):
+
+```
+codex plugin marketplace add Waterbear-AI/viberdocs-plugin
+codex plugin add viberdocs@waterbearai
+```
+
+Codex does not fill in the Claude Code variable the skill's commands start with, so the skill tells it to run `scripts/viberdocs.mjs` from the skill's own folder instead. Codex asks before it runs the script, as it does for any command.
 
 ## What the plugin runs, sends and fetches
 

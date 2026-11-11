@@ -1,0 +1,7 @@
+interface:
+  display_name: "ViberDocs"
+  short_description: "Publish, pull and preview ViberDocs docs"
+  brand_color: "#1D63D8"
+  default_prompt: "Publish this HTML file to ViberDocs"
+policy:
+  allow_implicit_invocation: true
