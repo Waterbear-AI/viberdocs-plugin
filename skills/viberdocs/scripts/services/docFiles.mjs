@@ -227,11 +227,20 @@ export async function prepareTarget(dir, root) {
 
 // ---- .viberdocs.json ----------------------------------------------------------------------------------------------
 
-const STATE_KEYS = ['base_version', 'doc_id', 'draft_id', 'files'];
+const STATE_KEYS = ['base_version', 'doc_id', 'draft_id', 'files', 'created'];
 
-// Reads a folder's `.viberdocs.json`: `{doc_id, base_version, draft_id?, files: {path: sha256}}`, where `files` is the
-// version the folder was last in step with (`pull` or a successful `push`). Null when there is none; `invalid_state` for
-// a symlink, a non-file, an oversized file, or anything that is not exactly that shape. Fails closed.
+// What a doc was made with, kept in `.viberdocs.json` by the command that made it: `{name, workspace_id, folder_id}`.
+function validCreated(created) {
+  return Boolean(created) && typeof created === 'object' && !Array.isArray(created) &&
+    Object.keys(created).sort().join() === 'folder_id,name,workspace_id' &&
+    typeof created.name === 'string' && created.name.length >= 1 && created.name.length <= 255 &&
+    UUID.test(created.workspace_id || '') && (created.folder_id === null || UUID.test(created.folder_id || ''));
+}
+
+// Reads a folder's `.viberdocs.json`: `{doc_id, base_version, draft_id?, created?, files: {path: sha256}}`, where `files`
+// is the version the folder was last in step with (`pull` or a successful `push`) and `created` is what this CLI made the
+// doc with (absent after `pull`). Null when there is none; `invalid_state` for a symlink, a non-file, an oversized file,
+// or anything that is not exactly that shape. Fails closed.
 export async function readState(directory) {
   const file = path.join(directory, STATE_FILE);
   let stat;
@@ -245,6 +254,7 @@ export async function readState(directory) {
   if (!state || typeof state !== 'object' || Array.isArray(state) || Object.keys(state).some(key => !STATE_KEYS.includes(key)) ||
       !UUID.test(state.doc_id || '') || !Number.isSafeInteger(state.base_version) || state.base_version < 0 ||
       (state.draft_id !== undefined && !UUID.test(state.draft_id || '')) ||
+      (state.created !== undefined && !validCreated(state.created)) ||
       !state.files || typeof state.files !== 'object' || Array.isArray(state.files) ||
       Object.entries(state.files).some(([key, value]) => pathProblem(key) !== null || !SHA256.test(value))) {
     throw new AuthError('invalid_state');
@@ -253,9 +263,9 @@ export async function readState(directory) {
 }
 
 // Writes `.viberdocs.json` beside the files: a new private temporary file, synced, then renamed over the old one.
-export async function writeState(directory, { doc_id, base_version, draft_id, files }) {
+export async function writeState(directory, { doc_id, base_version, draft_id, created, files }) {
   const file = path.join(directory, STATE_FILE);
-  const state = { doc_id, base_version, ...(draft_id ? { draft_id } : {}), files };
+  const state = { doc_id, base_version, ...(draft_id ? { draft_id } : {}), ...(created ? { created } : {}), files };
   const temporary = path.join(directory, `.viberdocs-state-${randomUUID()}`);
   let fd;
   try {

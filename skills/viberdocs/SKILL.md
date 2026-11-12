@@ -1,6 +1,6 @@
 ---
 name: viberdocs
-description: Publish, edit, preview or download ViberDocs docs (a doc is a folder of files) and save templates with the ViberDocs command-line tool bundled in this plugin. Use it when the user asks to publish a doc to ViberDocs, change a doc, look at a doc before it goes live, pull a doc to edit it, or save a template.
+description: Publish, edit, preview or download ViberDocs docs (a doc is a folder of files) and save templates with the ViberDocs command-line tool bundled in this plugin. Use it when the user asks to publish a doc to ViberDocs, change a doc, look at a doc before it goes live, pull a doc to edit it, or save a template. Use it, not the ViberDocs draft tools, to publish files that are already on disk: it sends them without reading them into the conversation.
 allowed-tools: Bash(node ${CLAUDE_SKILL_DIR}/scripts/viberdocs.mjs *)
 ---
 
@@ -11,7 +11,8 @@ This skill publishes, previews and pulls ViberDocs docs and saves template draft
 ## Choosing a path
 
 - **With a shell, Node 22 or 24 and macOS or Linux (WSL counts): use this CLI** for docs (`pull`, `check`, `preview`, `push`). `upload` and `download` are only for one HTML file the user hands you.
-- **Without Node 22 or 24, or not on macOS, Linux or WSL, or when the CLI cannot log in or reach the API** (for example `login_unavailable` or `network_error`): use the MCP draft tools for docs (`start_doc_draft`, `view_doc_file` and `search_doc_files`, `edit_doc_draft`, `preview_doc_draft`, `publish_doc_draft`), and `create_template` and `update_template` for templates. The draft tools cost more tokens, so say so. The transfer-token runbook (`create_transfer_token`) stays only for a single HTML file.
+- **Files already on disk go out with `push`**, whatever their size: `check` the folder, fix what it reports, then `push` it. For a new doc, give `--workspace`, `--name` and `--folder` on the first of those commands (see "Naming a new doc"). Don't read the files into the conversation to send them again with `edit_doc_draft`.
+- **Without Node 22 or 24, or not on macOS, Linux or WSL, or when the CLI cannot log in or reach the API** (for example `login_unavailable` or `network_error`): use the MCP draft tools for docs (`start_doc_draft`, `view_doc_file` and `search_doc_files`, `edit_doc_draft`, `preview_doc_draft`, `publish_doc_draft`), and `create_template` and `update_template` for templates. The draft tools cost more tokens, so say so.
 - **On `network_error`**, ask the user to allow the API host the message names, through the host's normal permission process, then run the command again (resume a saved operation if the result shows one). If it stays blocked, use the draft tools; they reach the host through the connector. Do not disable TLS validation or look for another way around the block.
 
 To write the doc itself, call `get_guide` with topic `build_doc`: it returns a short core, and you fetch a section by name (the `section` argument) only when the core's index says it applies.
@@ -23,7 +24,7 @@ The guide describes the MCP draft tools. With this CLI, run the mapped command w
 | The guide names | Run this instead |
 | --- | --- |
 | `start_doc_draft` for a doc that exists | `pull --doc <doc_id> --dir <new_folder>` |
-| `start_doc_draft` for a new doc | Make a new folder: `push` creates the doc (with `--workspace` and `--name`, and `--folder` to file it) |
+| `start_doc_draft` for a new doc | Make a new folder: the first `check`, `preview` or `push` of it creates the doc, so that command takes `--workspace` and `--name`, and `--folder` to file it |
 | `edit_doc_draft`, `view_doc_file`, `search_doc_files`, `list_doc_files` | Edit, read and search the files in the folder |
 | `preview_doc_draft` | `preview <folder>` |
 | `publish_doc_draft` | `push <folder>` |
@@ -36,7 +37,8 @@ Steps the guide leaves to the CLI:
 
 - **Updating an existing doc.** `pull` it into a new folder: its `.viberdocs.json` remembers the base version, so the version stays the same doc. Edit only what must change, then `check` and `push` from that folder. Never start a fresh folder just to publish an update: that defeats the conflict check.
 - **A doc with sign-off.** Read the decisions first with the `get_doc_signoffs` tool, then change the files in the folder.
-- **Filing a new doc in a folder.** Find or create the folder with `list_folders` and `create_folder`, then pass its id as `push --folder <folder_id>` with the same `--workspace`.
+- **Naming a new doc.** A folder with no `.viberdocs.json` has no doc yet, and the first `check`, `preview` or `push` you run on it makes one. Pass `--workspace` and `--name` on that first command, whichever it is: a doc keeps the name and workspace it was made with, and nothing renames it. Left out, the doc is named after the folder. Later commands on the folder need none of these options: repeating the same ones is fine, and a different one ends with `doc_mismatch` and sends nothing. A folder written by `pull` already has its doc, so never pass `--name` there.
+- **Filing a new doc in a folder.** Find or create the folder with `list_folders` and `create_folder`, then pass its id as `--folder <folder_id>` on that same first command, with the same `--workspace`.
 - **Templates.** `template schema` writes the package schema to a file; `template create` and `template update` save a draft (see "Templates").
 
 ## Where to run it
@@ -62,6 +64,7 @@ node ${CLAUDE_SKILL_DIR}/scripts/viberdocs.mjs logout --json
 node ${CLAUDE_SKILL_DIR}/scripts/viberdocs.mjs pull --doc <doc_id> --dir <new_folder> --json
 node ${CLAUDE_SKILL_DIR}/scripts/viberdocs.mjs pull --doc <doc_id> --dir <new_folder> --version <n> --json
 node ${CLAUDE_SKILL_DIR}/scripts/viberdocs.mjs check <folder> --json
+node ${CLAUDE_SKILL_DIR}/scripts/viberdocs.mjs check <folder> --workspace <workspace_id> --name "<name>" --folder <folder_id> --json
 node ${CLAUDE_SKILL_DIR}/scripts/viberdocs.mjs preview <folder> --json
 node ${CLAUDE_SKILL_DIR}/scripts/viberdocs.mjs preview <folder> --no-open --json
 node ${CLAUDE_SKILL_DIR}/scripts/viberdocs.mjs push <folder> --json
@@ -80,7 +83,7 @@ node ${CLAUDE_SKILL_DIR}/scripts/viberdocs.mjs template create <template.json> -
 node ${CLAUDE_SKILL_DIR}/scripts/viberdocs.mjs template update <template.json> --handle <handle> --draft-revision <draft_revision> --json
 ```
 
-- **Docs are folders.** `pull` writes a doc into a new (or empty) folder with a `.viberdocs.json` beside the files, which says which doc and version the folder came from. Edit the files, then `check` (what publishing would find), `preview` (a link to look at the draft before it goes live: it prints the link and opens the default browser; with `--no-open`, or where no browser can open, it only prints the link) and `push` (publishes the folder as the doc's next version; the folder's files replace the doc's files). A folder with no `.viberdocs.json` is a new doc: `push` (and `check` and `preview`) make it, in `--workspace` (required under an all-workspaces login) with `--name` (default: the folder's name) and optionally `--folder`. `push` of a folder that matches the version it came from prints "nothing to publish" and exits 0.
+- **Docs are folders.** `pull` writes a doc into a new (or empty) folder with a `.viberdocs.json` beside the files, which says which doc and version the folder came from. Edit the files, then `check` (what publishing would find), `preview` (a link to look at the draft before it goes live: it prints the link and opens the default browser; with `--no-open`, or where no browser can open, it only prints the link) and `push` (publishes the folder as the doc's next version; the folder's files replace the doc's files). A folder with no `.viberdocs.json` is a new doc: the first `check`, `preview` or `push` of it makes the doc, in `--workspace` (required under an all-workspaces login) with `--name` (default: the folder's name) and optionally `--folder`, so give them on that command ("Naming a new doc"). `push` of a folder that matches the version it came from prints "nothing to publish" and exits 0.
 - **Each part is its own file.** Write the page as `index.html` plus a stylesheet and a script (`css/site.css`, `js/app.js`), and data and images as files (`data/rows.json`, `img/logo.png`), linked by relative paths. Don't inline them in the page: later edits then change one small file. Load Chart.js from `/_vd/lib/chart.js@4.6.1/chart.umd.js`, never a CDN.
 - A doc folder holds regular files and folders only: no symlinks, and dotfiles (including `.viberdocs.json`) are ignored. Paths use letters, digits, `.`, `_` and `-`, at most 6 levels deep and 200 characters, with a type from html, css, js, mjs, json, md, txt, csv, svg, png, jpg, jpeg, gif, webp, avif, woff2 or ico; `_vd/`, `__srv/` and a root `sdk.js` are reserved. At most 500 files, 10 MiB each, 25 MiB in all. The folder must be inside the project folder with no dot-folder in its path. A page whose JavaScript uses `ViberDocs.*` loads `<script src="/sdk.js"></script>` (without it the `sdk.missing_script` finding blocks the push).
 - **Findings.** `check` and `push` print each finding as `severity code file:line message`, then its `fix` on the next line (with `--json`, they are in `findings`). Every `error` finding must be fixed before `push` succeeds (`checks_failed`: nothing was published); warnings and info do not block. Run `check` or `preview` after edits, not only at the end.
@@ -129,6 +132,7 @@ A success has `ok: true`. A failure has `ok: false`, a `code`, a `message` and `
 | `login_unavailable` | CLI login is not switched on for this server. Use the draft tools for docs and `create_template` / `update_template` for templates. Do not retry. |
 | `invalid_input`, `invalid_output` | The file, folder or path breaks the rules above (a symlink in a doc folder, a folder outside the project, a `pull --dir` that is not new or empty). Fix it; nothing was sent or written. |
 | `invalid_state` | A folder's `.viberdocs.json` is not valid. Delete it and `pull` the doc again, or push the folder as a new doc. |
+| `doc_mismatch` | The folder already has a doc, and `--name`, `--workspace` or `--folder` (named in `mismatch`) is not what that doc was made with (`doc` says what it was; null for a pulled doc). Nothing was sent. To use this doc, run the command again without those options, and tell the user the name it has. For a new doc under the name you gave, the user deletes the folder's `.viberdocs.json` and you run the command again with them. |
 | `checks_failed` | The folder has error findings (printed, and in `findings`). Fix each, using its `fix`, and run `check` again. Nothing was published. |
 | `doc_version_conflict` | Someone published first (see "If someone else published first"). Nothing was published. |
 | `multi_file_doc` | `download` of a doc made of files. Use `pull`. |

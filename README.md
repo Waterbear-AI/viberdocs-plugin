@@ -61,7 +61,7 @@ The plugin also connects the ViberDocs MCP server at `https://viberdocs.com/mcp`
 - write docs: start a draft of a doc, edit its files, preview it at a short-lived link, and publish it as the doc's next version, or make an earlier version live again;
 - organize: create workspaces and folders, and move, copy, trash and restore docs and folders (after a preview of what each would affect);
 - templates and styles: create and update template drafts, save styles, and promote a template to ViberDocs' public community library, which a moderator reviews;
-- records and transfers: add and update a doc's records, and mint short-lived transfer tokens for uploads from a shell without the plugin.
+- records: add and update a doc's records.
 
 ## Using it
 

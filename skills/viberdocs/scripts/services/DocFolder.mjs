@@ -175,7 +175,9 @@ export class DocFolder {
       const url = isObject(data) ? siteUrl(this.authClient.origin, data.url) : null;
       if (!url || data.doc_id !== state.doc_id || !Number.isSafeInteger(data.version) || data.version < 1 ||
           !SHA256.test(data.content_hash || '')) throw new AuthError('invalid_response');
-      await writeState(scan.directory, { doc_id: state.doc_id, base_version: data.version, files: fileMap(scan.entries) });
+      await writeState(scan.directory, {
+        doc_id: state.doc_id, base_version: data.version, created: state.created, files: fileMap(scan.entries),
+      });
       return {
         ok: true, outcome: 'published', doc_id: state.doc_id, version: data.version,
         url, content_hash: data.content_hash,
@@ -201,6 +203,7 @@ export class DocFolder {
     return this.store.withLock(async () => {
       const context = {};
       try {
+        if (scan.state) this.matchLinkedDoc(scan.state, options);
         await this.login({ write: true });
         let state = scan.state ?? await this.newDoc(scan.directory, options);
         context.doc_id = state.doc_id;
@@ -222,7 +225,7 @@ export class DocFolder {
             const gone = error instanceof AuthError && reused && attempt === 0 &&
               (error.code === 'http_404' || (error.code === 'http_409' && error.server?.code === 'DRAFT_PUBLISHED'));
             if (!gone) throw error;
-            state = { doc_id: state.doc_id, base_version: state.base_version, files: state.files };
+            state = { doc_id: state.doc_id, base_version: state.base_version, created: state.created, files: state.files };
             draftId = undefined;
             reused = false;
           }
@@ -261,9 +264,30 @@ export class DocFolder {
     if (!isObject(data) || !UUID.test(data.id || '') || !UUID.test(data.doc_id || '') || data.base_version !== 0) {
       throw new AuthError('invalid_response');
     }
-    const state = { doc_id: data.doc_id, base_version: 0, draft_id: data.id, files: {} };
+    const created = { name: body.name, workspace_id: body.space_id, folder_id: body.folder_id ?? null };
+    const state = { doc_id: data.doc_id, base_version: 0, draft_id: data.id, created, files: {} };
     await writeState(directory, state);
     return state;
+  }
+
+  // `--name`, `--workspace` and `--folder` say what a new doc is. A folder that already has a doc keeps it (an earlier
+  // `check`, `preview` or `push` made it, or `pull` wrote it), and no route renames a doc or moves it to another
+  // workspace. So an option that is not what the doc was made with is `doc_mismatch`, before anything is sent: dropped
+  // silently, a `check` with no `--name` followed by `push --name` published the doc under the folder's name. What the
+  // doc was made with is `created` in `.viberdocs.json` (a CLI login may not read a doc's details from the API). Without
+  // it (a pulled folder, or a doc an older CLI made) the name is unknown, so any `--name` is a mismatch (a `push --name`
+  // of a pulled folder would otherwise publish over the doc it was pulled from), and the other two are left alone.
+  matchLinkedDoc(state, options) {
+    const made = state.created;
+    const same = (wanted, actual) => String(wanted).toLowerCase() === String(actual).toLowerCase();
+    const mismatch = [];
+    if (options.name !== undefined && (!made || options.name.trim() !== made.name.trim())) mismatch.push('name');
+    if (made && options.workspace && !same(options.workspace, made.workspace_id)) mismatch.push('workspace');
+    if (made && options.folder && !same(options.folder, made.folder_id)) mismatch.push('folder');
+    if (!mismatch.length) return;
+    const error = new AuthError('doc_mismatch');
+    Object.assign(error, { doc_id: state.doc_id, mismatch, doc: made ?? null });
+    throw error;
   }
 
   // A draft of the doc from the version the folder is in step with, never the live one: publishing a draft built on a

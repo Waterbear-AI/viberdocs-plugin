@@ -21,10 +21,11 @@ import { SERVER_CODE, TEMPLATE_HANDLE, printableProblems } from './services/temp
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const FOLDER_COMMANDS = ['check', 'preview', 'push'];
 const usage = () => `Usage: ${selfCommand()} login [--no-browser] | logout | status | ` +
-  'pull --doc ID --dir FOLDER [--version N] | check FOLDER | preview FOLDER [--no-open] | ' +
-  'push FOLDER [--workspace ID --name NAME [--folder ID]] | upload FILE [options] | ' +
+  'pull --doc ID --dir FOLDER [--version N] | check FOLDER [NEW] | preview FOLDER [--no-open] [NEW] | ' +
+  'push FOLDER [NEW] | upload FILE [options] | ' +
   'download --doc ID [--version N] --output FILE | template create FILE [--workspace ID] | ' +
-  'template update FILE --handle H --draft-revision N | template schema --output FILE';
+  'template update FILE --handle H --draft-revision N | template schema --output FILE. ' +
+  'NEW, on the first check, preview or push of a folder (that command makes the doc): --workspace ID --name NAME [--folder ID]';
 const TEMPLATE_SUBCOMMANDS = ['create', 'update', 'schema'];
 let networkOrigin;
 let networkOperation;
@@ -196,7 +197,7 @@ main().catch(error => {
     'no_pending_login', 'login_expired', 'invalid_state', 'invalid_file', 'file_changed', 'invalid_operation',
     'invalid_output', 'integrity_failed', 'no_active_version',
     'invalid_template_file', 'draft_revision_conflict',
-    'checks_failed', 'doc_version_conflict', 'edit_refused', 'multi_file_doc',
+    'checks_failed', 'doc_version_conflict', 'edit_refused', 'multi_file_doc', 'doc_mismatch',
     'operation_mismatch', 'idempotency_conflict', 'read_only_login', 'workspace_required', 'http_401', 'http_402', 'http_403', 'http_404', 'http_409',
     'http_413', 'http_422', 'http_429', 'http_500', 'http_502', 'http_503', 'http_504',
   ];
@@ -257,6 +258,7 @@ main().catch(error => {
       checks_failed: 'The checks found errors, so nothing was published. Fix every error finding (its fix says how) and run the command again.',
       doc_version_conflict: 'Someone published this doc after the folder was pulled, so nothing was published and there is no override. changed_here, changed_there and both name the files each side changed. Pull the live version into a new folder with the suggestion, merge your changes into it, and push that folder.',
       edit_refused: 'The server refused an edit; nothing was changed.',
+      doc_mismatch: 'This folder already has a doc (an earlier check, preview or push made it, or pull wrote it), and the options in mismatch are not what it was made with, so nothing was sent. doc says what it was made with (null for a pulled doc, which keeps the name it has). A doc keeps its name and workspace, and --folder files only a new doc. To use this doc, run the command again without those options. To make a new doc with them instead, delete .viberdocs.json from the folder and run it again.',
       http_404: 'The doc, its workspace or the draft is unavailable to this login.',
       http_409: 'The doc or its draft conflicts with the request; server_code says which.',
       http_422: 'The server rejected the files; server_code says which. Run check for the findings.',
@@ -286,6 +288,16 @@ main().catch(error => {
       for (const line of conflictLines(result)) console.log(line);
       if (result.suggestion) console.log(`To merge: ${result.suggestion}`);
     }
+  }
+  if (code === 'doc_mismatch') {
+    const fields = ['name', 'workspace', 'folder'];
+    result.mismatch = Array.isArray(error.mismatch) ? error.mismatch.filter(field => fields.includes(field)) : [];
+    const made = error.doc && typeof error.doc === 'object' ? error.doc : null;
+    result.doc = made && {
+      name: printable(String(made.name ?? ''), 255),
+      workspace_id: UUID.test(made.workspace_id || '') ? made.workspace_id : null,
+      folder_id: UUID.test(made.folder_id || '') ? made.folder_id : null,
+    };
   }
   if (UUID.test(error.draft_id || '')) result.draft_id = error.draft_id;
   if (code === 'http_422') {
